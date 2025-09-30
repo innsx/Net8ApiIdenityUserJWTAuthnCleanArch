@@ -1,0 +1,75 @@
+﻿using JWTAuth.Application.Interfaces;
+using JWTAuth.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
+namespace JWTAuth.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class MoviesController : ControllerBase
+    {
+
+        private readonly IMovieRepository _movieRepository;
+
+        public MoviesController(IMovieRepository movieRepository)
+        {
+            _movieRepository = movieRepository;
+        }
+
+        //[Authorize]
+        [HttpGet("GetMovies")] 
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
+        {
+            var movies = await _movieRepository.GetMoviesAsync();
+            return Ok(movies);
+        }
+
+        //[Authorize]
+        [HttpGet("GetMovie/{id}")]
+        public async Task<ActionResult<Movie>> GetMovieById(int id)
+        {
+            var movie = await _movieRepository.GetMovieByIdAsync(id);
+
+            if (movie is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(movie);
+        }
+
+        //[Authorize]
+        [HttpPut("Update/{id}")]
+        public async Task<ActionResult<Movie>> UpdateMovie(Movie movie)
+        {
+            var isUpdate = await _movieRepository.UpdateMovieAsync(movie);
+
+            if (isUpdate == 0)
+            {
+                return Ok(movie);
+            }
+
+            return BadRequest();
+        }
+
+        //[Authorize]
+        [HttpPost("CreateMovie")]
+        public async Task<ActionResult<Movie>> CreateMovie(Movie movie)
+        {
+            var isCreated = await _movieRepository.CreateMovieAsync(movie);
+
+            if (isCreated == 0)
+            {
+                return Ok(movie);
+            }
+
+            return BadRequest();
+
+
+        }
+    }
+}

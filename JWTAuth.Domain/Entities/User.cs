@@ -1,14 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JWTAuth.Domain.Entities
 {
     public class User : IdentityUser<Guid>
     {
+        //add additional custom PROPERTIES to IdentityUser AspNetUsers table
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public string? RefreshToken { get; set; }
@@ -17,10 +13,10 @@ namespace JWTAuth.Domain.Entities
 
         public static User Create(string email, string firstName, string lastName)
         {
-            User user = new User 
-            { 
-                FirstName = firstName, 
-                LastName = lastName, 
+            User user = new User
+            {
+                FirstName = firstName,
+                LastName = lastName,
                 Email = email,
                 UserName = email
             };
@@ -33,7 +29,7 @@ namespace JWTAuth.Domain.Entities
         //Overriding ToString() allows you to define how an object of your class or struct should be represented as a string.
         public override string ToString()
         {
-            return FirstName + " "+ LastName;
+            return FirstName + " " + LastName;
         }
     }
 }

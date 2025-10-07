@@ -26,13 +26,13 @@ namespace JWTAuth.API.LogHandlers
             return true;
         }
 
-        public (HttpStatusCode statusCode, string message) GetExceptionDetails(Exception exception)
+        public static (HttpStatusCode statusCode, string message) GetExceptionDetails(Exception exception)
         {
             return exception switch
             {
                 LoginFailedException => (HttpStatusCode.Unauthorized, exception.Message),
                 UserAlreadyExistsException => (HttpStatusCode.Conflict, exception.Message),
-                RegisterationFailedException => (HttpStatusCode.BadRequest, exception.Message),
+                RegistrationFailedException => (HttpStatusCode.BadRequest, exception.Message),
                 RefreshTokenException => (HttpStatusCode.Unauthorized, exception.Message),
 
                 _ => (HttpStatusCode.InternalServerError, $"An Unexpected Error Occured: {exception.Message}")

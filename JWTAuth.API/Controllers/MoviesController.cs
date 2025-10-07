@@ -1,10 +1,7 @@
 ﻿using JWTAuth.Application.Interfaces;
 using JWTAuth.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace JWTAuth.API.Controllers
 {
@@ -20,15 +17,15 @@ namespace JWTAuth.API.Controllers
             _movieRepository = movieRepository;
         }
 
-        //[Authorize]
-        [HttpGet("GetMovies")] 
+        [Authorize]
+        [HttpGet("GetMovies")]
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
             var movies = await _movieRepository.GetMoviesAsync();
             return Ok(movies);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("GetMovie/{id}")]
         public async Task<ActionResult<Movie>> GetMovieById(int id)
         {
@@ -42,7 +39,7 @@ namespace JWTAuth.API.Controllers
             return Ok(movie);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPut("Update/{id}")]
         public async Task<ActionResult<Movie>> UpdateMovie(Movie movie)
         {
@@ -56,7 +53,7 @@ namespace JWTAuth.API.Controllers
             return BadRequest();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost("CreateMovie")]
         public async Task<ActionResult<Movie>> CreateMovie(Movie movie)
         {

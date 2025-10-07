@@ -29,7 +29,7 @@ builder.Services.AddDbContext<MovieDbContext>(options =>
 
 
 //REGISTER & INJECT AuthTokenProcessor
-builder.Services.AddScoped<IAuthTokenProcessor, AuthTokenProcessor>();
+builder.Services.AddScoped<IJwtTokenGeneration, JwtTokenGeneration>();
 
 //REGISTER & INJECT AccountService
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -46,6 +46,7 @@ builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 //to their corresponding JwtOptions class properties
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.JwtOptionsKey));
 
+//Register Identity & use these OPTIONS to VALIDATE the Registering User's Password or UserName
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 {
     options.Password.RequireDigit = true;
@@ -56,9 +57,14 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 
     options.User.RequireUniqueEmail = true;
 
+    //AddEntityFrameworkStores() method configures the Entity Framework as the storage mechanism for Identity data.
+    //specified ApplicationDbContext object as the RETURN type
+    //which ApplicationDbContext object INHERITS IdentityDbContext
+    //from Microsoft.AspnetCore.Identity.EntityFrameworkCore Pckg
 }).AddEntityFrameworkStores<ApplicationDbContext>();
 
 
+//install MS.AspNetCore.Authentication.JwtBearer pckg so we can Register & Configure AddAuthentication() & AddJwtBearer( )
 //REGISTER the Authentication as a SERVICES &
 //SPECIFIED JwtBearerDefaults.AuthenticationScheme for all DEFAULT SCHEMEs
 builder.Services.AddAuthentication(options =>
@@ -77,11 +83,14 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
         ValidIssuer = jwtOptions.Issuer,
+
+        ValidateLifetime = true,
+
+        ValidateAudience = true,
         ValidAudience = jwtOptions.Audience,
+
+        ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret!))
     };
 
@@ -122,7 +131,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
     //Installed Scalar.AspNetCore & mapped it as UI testing 
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options => options.WithTitle("JWT Token with API"));
 }
 
 //_ => { } part is a lambda expression that represents an empty delegate.
@@ -136,9 +145,10 @@ app.UseExceptionHandler(_ => { });
 
 app.UseHttpsRedirection();
 
-//use Authentication & Authorization in the MIDDLEWARE
+//use Authentication to VALIDATE JWT Token 
 app.UseAuthentication();
 
+//Authorization the SignIn User Permissions to Access Resources
 app.UseAuthorization();
 
 app.MapControllers();

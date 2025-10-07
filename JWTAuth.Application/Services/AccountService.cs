@@ -8,14 +8,14 @@ namespace JWTAuth.Application.Services
 {
     public class AccountService : IAccountService
     {
-        private readonly IAuthTokenProcessor _authTokenProcess;
+        private readonly IJwtTokenGeneration _jwtTokenGeneration;
         private readonly UserManager<User> _userManager;
         private readonly IUserRepositories _userRepositories;
 
-        public AccountService(IAuthTokenProcessor authTokenProcess, UserManager<User> userManager, IUserRepositories userRepositories)
+        public AccountService(IJwtTokenGeneration jwtTokenGeneration, UserManager<User> userManager, IUserRepositories userRepositories)
         {
-            _authTokenProcess = authTokenProcess;
-            this._userManager = userManager;
+            _jwtTokenGeneration = jwtTokenGeneration;
+            _userManager = userManager;
             _userRepositories = userRepositories;
         }
 
@@ -30,17 +30,17 @@ namespace JWTAuth.Application.Services
                 throw new LoginFailedException(loginRequest.Email);
             }
 
-            await GenerateNewOrRefreshToken(user);
+            await GenerateNewAndRefreshTokenAsync(user);
         }
 
-        private async Task GenerateNewOrRefreshToken(User user)
+        private async Task GenerateNewAndRefreshTokenAsync(User user)
         {
 
             //Generate a JWT Token
-            var (jwtToken, expirationDateInUtc) = _authTokenProcess.GenerateJwtToken(user);
+            var (jwtToken, expirationDateInUtc) = _jwtTokenGeneration.GenerateJwtToken(user);
 
             //Generate a REFRESH JWT TOKEN
-            var refreshTokenValue = _authTokenProcess.GenerateRefreshToken();
+            var refreshTokenValue = _jwtTokenGeneration.GenerateRefreshToken();
 
             var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
 
@@ -49,13 +49,19 @@ namespace JWTAuth.Application.Services
 
             await _userManager.UpdateAsync(user);
 
-            //APPEND JWT TOKEN to HTTPONLY local storage
-            _authTokenProcess.AppendTokenInHttpOnlyLocalStorage("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
-
-            _authTokenProcess.AppendTokenInHttpOnlyLocalStorage("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);
+            AppendJwtTokenInCookieHttpOnly(user, jwtToken, expirationDateInUtc, refreshTokenExpirationDateInUtc);
         }
 
-        public async Task RefreshTokenAsync(string? refreshToken)
+        private void AppendJwtTokenInCookieHttpOnly(User user, string jwtToken, DateTime expirationDateInUtc, DateTime refreshTokenExpirationDateInUtc)
+        {
+
+            //APPEND JWT TOKEN to HTTPONLY local storage
+            _jwtTokenGeneration.AppendTokenInCookieHttpOnlyLocalStorage("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
+
+            _jwtTokenGeneration.AppendTokenInCookieHttpOnlyLocalStorage("REFRESH_TOKEN", user.RefreshToken!, refreshTokenExpirationDateInUtc);
+        }
+
+        public async Task RefreshExpiredTokenAsync(string? refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
             {
@@ -74,7 +80,7 @@ namespace JWTAuth.Application.Services
                 throw new RefreshTokenException("Refresh Token is expired.");
             }
 
-            await GenerateNewOrRefreshToken(user);
+            await GenerateNewAndRefreshTokenAsync(user);
         }
 
         public async Task RegisterRequestAsync(RegisterRequest registerRequest)
@@ -94,7 +100,7 @@ namespace JWTAuth.Application.Services
 
             if (!identityCreatedResult.Succeeded)
             {
-                throw new RegisterationFailedException(identityCreatedResult.Errors.Select(e => e.Description));
+                throw new RegistrationFailedException(identityCreatedResult.Errors.Select(e => e.Description));
             }
         }
     }

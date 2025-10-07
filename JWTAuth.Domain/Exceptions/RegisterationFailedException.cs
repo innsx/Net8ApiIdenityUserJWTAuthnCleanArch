@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace JWTAuth.Domain.Exceptions
 {
-    public class RegisterationFailedException(IEnumerable<string> errorDescription) 
+    public class RegistrationFailedException(IEnumerable<string> errorDescription) 
         : Exception($"Registration failed with following errors: {string.Join(Environment.NewLine, errorDescription)}")
     {
     }

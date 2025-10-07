@@ -2,12 +2,12 @@
 
 namespace JWTAuth.Application.Interfaces
 {
-    public interface IAuthTokenProcessor
+    public interface IJwtTokenGeneration
     {
         (string jwtToken, DateTime expireAtUtc) GenerateJwtToken(User user);
 
         string GenerateRefreshToken();
 
-        void AppendTokenInHttpOnlyLocalStorage(string cookieName, string token, DateTime expiration);
+        void AppendTokenInCookieHttpOnlyLocalStorage(string cookieName, string token, DateTime expiration);
     }
 }

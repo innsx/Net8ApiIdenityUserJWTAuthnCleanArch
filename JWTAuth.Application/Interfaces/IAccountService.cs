@@ -13,6 +13,6 @@ namespace JWTAuth.Application.Interfaces
         Task LoginRequestAsnyc(LoginRequest loginRequest);
         Task RegisterRequestAsync(RegisterRequest registerRequest);
 
-        Task RefreshTokenAsync(string? refreshToken);
+        Task RefreshExpiredTokenAsync(string? refreshToken);
     }
 }

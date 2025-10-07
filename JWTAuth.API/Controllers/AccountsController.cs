@@ -9,7 +9,7 @@ namespace JWTAuth.API.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly IAccountService _accountService;
-        private readonly IHttpContextAccessor  _httpContext;
+        private readonly IHttpContextAccessor _httpContext;
 
         public AccountsController(IAccountService accountService, IHttpContextAccessor httpContext)
         {
@@ -36,9 +36,9 @@ namespace JWTAuth.API.Controllers
         [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken()
         {
-            var refreshToken = _httpContext.HttpContext?.Request.Cookies["REFRESH_TOKEN"];
+            var refreshTokenFromCookie = _httpContext.HttpContext?.Request.Cookies["REFRESH_TOKEN"];
 
-            await _accountService.RefreshTokenAsync(refreshToken);
+            await _accountService.RefreshExpiredTokenAsync(refreshTokenFromCookie);
 
             return Ok();
         }

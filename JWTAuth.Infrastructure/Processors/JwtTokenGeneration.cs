@@ -11,18 +11,21 @@ using System.Text;
 
 namespace JWTAuth.Infrastructure.Processors
 {
-    public class AuthTokenProcessor : IAuthTokenProcessor
+    public class JwtTokenGeneration : IJwtTokenGeneration
     {
         private readonly JwtOptions _jwtOptions;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuthTokenProcessor(IOptions<JwtOptions> jwtOptions, IHttpContextAccessor httpContextAccessor)
+        public JwtTokenGeneration(IOptions<JwtOptions> jwtOptions, IHttpContextAccessor httpContextAccessor)
         {
             _jwtOptions = jwtOptions.Value;
             _httpContextAccessor = httpContextAccessor;
         }
 
-        //Generating a JWT Token
+        //Install MS.IdentityModel.Tokens, Systems.IdentityModel.Tokens.Jwt
+        //to Generate a JWT Token & Store JWT Token 
+        //in Browser's Cookie Storage as HTTPOnly/local Storage
+        //install MS.AspNetCore.Http.Abstractions to ACCESS HTTP Context
         public (string jwtToken, DateTime expireAtUtc) GenerateJwtToken(User user)
         {
             var signinSecretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret!));
@@ -32,24 +35,26 @@ namespace JWTAuth.Infrastructure.Processors
             var claims = new[]
             {
                     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),  //JWT Token Identifier
                     new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-                    new Claim(ClaimTypes.NameIdentifier, user.ToString())
+                    new Claim(ClaimTypes.NameIdentifier, user.ToString())   //user.Tostring() fetches User Model FullName toString()
                 };
 
-            var expiresAt = DateTime.UtcNow.AddDays(7);
+            var expiresAt = DateTime.UtcNow.AddMinutes(1);
 
+            //Generating the JWT Token based of these Criterias
             var token = new JwtSecurityToken
             (
                 issuer: _jwtOptions.Issuer,
                 audience: _jwtOptions.Audience,
                 claims: claims,
-                expires: expiresAt
+                expires: expiresAt,
+                signingCredentials: signinCredentials
             );
 
-            var jwtToken = new JwtSecurityTokenHandler().WriteToken(token);
+            var jwtSerialized = new JwtSecurityTokenHandler().WriteToken(token);
 
-            return (jwtToken, expiresAt);
+            return (jwtSerialized, expiresAt);
         }
 
 
@@ -57,25 +62,26 @@ namespace JWTAuth.Infrastructure.Processors
         public string GenerateRefreshToken()
         {
             var randomNumber = new byte[64];
-            using var rng = RandomNumberGenerator.Create();
+            using var rng = RandomNumberGenerator.Create();  //memory will get dispose
             rng.GetBytes(randomNumber);
 
             return Convert.ToBase64String(randomNumber);
         }
 
-        //specifie & APPEND CookieName, the token, & cookieOptions to HTTPContext
-        public void AppendTokenInHttpOnlyLocalStorage(string cookieName, string token, DateTime expiration)
+        //Specified CookieOptions using HTTPContextAccessor
+        // & APPEND CookieName, the token, & cookieOptions 
+        public void AppendTokenInCookieHttpOnlyLocalStorage(string cookieName, string token, DateTime expiration)
         {
             _httpContextAccessor.HttpContext.Response.Cookies.Append(
                 cookieName,
                 token,
                 new CookieOptions
                 {
-                    HttpOnly = true,
+                    HttpOnly = true,  //specified that JWT stores in Browser' Cookie Storage as HttpOnly
                     Expires = expiration,
-                    IsEssential = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict //prevents cross site access
+                    IsEssential = true, //specified that a COOKIE is Essential/must have
+                    Secure = true,  //specified that the JWT be transmit over on HTTPS ONLY
+                    SameSite = SameSiteMode.Strict //prevents the COOKIE transmits in cross sites requests
                 });
         }
     }

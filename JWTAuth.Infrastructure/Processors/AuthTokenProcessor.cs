@@ -64,11 +64,11 @@ namespace JWTAuth.Infrastructure.Processors
         }
 
         //specifie & APPEND CookieName, the token, & cookieOptions to HTTPContext
-        public void WriteAuthTokenAsHttpOnlyCookie(string cookieName, string token, DateTime expiration)
+        public void AppendTokenInHttpOnlyLocalStorage(string cookieName, string token, DateTime expiration)
         {
             _httpContextAccessor.HttpContext.Response.Cookies.Append(
-                cookieName, 
-                token, 
+                cookieName,
+                token,
                 new CookieOptions
                 {
                     HttpOnly = true,
@@ -79,5 +79,5 @@ namespace JWTAuth.Infrastructure.Processors
                 });
         }
     }
-       
+
 }

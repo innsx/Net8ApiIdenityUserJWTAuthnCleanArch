@@ -17,6 +17,29 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("UserDbConnString"));
+});
+
+builder.Services.AddDbContext<MovieDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("MovieDbConnString"));
+});
+
+
+//REGISTER & INJECT AuthTokenProcessor
+builder.Services.AddScoped<IAuthTokenProcessor, AuthTokenProcessor>();
+
+//REGISTER & INJECT AccountService
+builder.Services.AddScoped<IAccountService, AccountService>();
+
+//REGISTER & INJECT UserRepository
+builder.Services.AddScoped<IUserRepositories, UserRepository>();
+
+builder.Services.AddScoped<IMovieRepository, MovieRepository>();
+
+
 //Register a configuration instance of JwtOptions
 //Get appsettings.json JwtOptions section and
 //BIND JwtOptions section Keys
@@ -35,42 +58,22 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 
 }).AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("UserDbConnString"));
-});
 
-builder.Services.AddDbContext<MovieDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MovieDbConnString"));
-});
-
-//REGISTER & INJECT AuthTokenProcessor
-builder.Services.AddScoped<IAuthTokenProcessor, AuthTokenProcessor>();
-
-//REGISTER & INJECT AccountService
-builder.Services.AddScoped<IAccountService, AccountService>();
-
-//REGISTER & INJECT UserRepository
-builder.Services.AddScoped<IUserRepositories, UserRepository>();
-
-builder.Services.AddScoped<IMovieRepository, MovieRepository>();
-
-//REGISTER the Authentication BASED OF THE JWT in our API ENDPOINTS
+//REGISTER the Authentication as a SERVICES &
+//SPECIFIED JwtBearerDefaults.AuthenticationScheme for all DEFAULT SCHEMEs
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
 
-}).AddJwtBearer(options =>
+}).AddJwtBearer(options =>  //REGISTER JwtBearer as a SERVICE
 {
     //GET JwtOptions section & BINDs to JwtOptions object & store it as a local variable 
     var jwtOptions = builder.Configuration
-            .GetSection(JwtOptions.JwtOptionsKey).Get<JwtOptions>() ?? throw new ArgumentException(nameof(JwtOptions)        );
+            .GetSection(JwtOptions.JwtOptionsKey).Get<JwtOptions>() ?? throw new ArgumentException(nameof(JwtOptions));
 
-
-    //TOKEN VALIDATING based of these OPTION parameters
+    //VALIDATING the JWT Token based of these OPTION parameters
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -82,8 +85,9 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret!))
     };
 
-    //we specified where to find this token, which we attached in the HTTP Cookie 
-    //and NOT appened in the HTTP HEADER
+    //we have append JWT in Browser's HTTPOnly/local storage 
+    //but NOT appened in the HTTP HEADER
+    //so we specified where to find JWT token with the a specific ["CookieName"]
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -117,7 +121,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 
-    //use Scalar.AspNetCore as UI testing 
+    //Installed Scalar.AspNetCore & mapped it as UI testing 
     app.MapScalarApiReference();
 }
 
@@ -125,7 +129,6 @@ if (app.Environment.IsDevelopment())
 //In this specific context, it means that no custom logic is being provided directly within the UseExceptionHandler call
 //to handle the exceptions.
 app.UseExceptionHandler(_ => { });
-
 ////app.UseExceptionHandler("/Error");  
 //logic provided directly within the UseExceptionHandler call
 //this Specify an error handling path: This redirects the request to a specific path (e.g., /Error)

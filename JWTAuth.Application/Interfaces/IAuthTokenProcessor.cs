@@ -8,6 +8,6 @@ namespace JWTAuth.Application.Interfaces
 
         string GenerateRefreshToken();
 
-        void WriteAuthTokenAsHttpOnlyCookie(string cookieName, string token, DateTime expiration);
+        void AppendTokenInHttpOnlyLocalStorage(string cookieName, string token, DateTime expiration);
     }
 }

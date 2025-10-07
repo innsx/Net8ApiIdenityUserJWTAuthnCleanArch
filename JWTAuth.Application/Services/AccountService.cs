@@ -23,22 +23,23 @@ namespace JWTAuth.Application.Services
         {
             var user = await _userManager.FindByEmailAsync(loginRequest.Email);
 
-            var isPasswordValid = await _userManager.CheckPasswordAsync(user, loginRequest.Password);
+            var isPasswordValid = await _userManager.CheckPasswordAsync(user!, loginRequest.Password);
 
             if (user == null || !isPasswordValid)
             {
                 throw new LoginFailedException(loginRequest.Email);
             }
 
-            await GetNewRefreshToken(user);
+            await GenerateNewOrRefreshToken(user);
         }
 
-        private async Task GetNewRefreshToken(User user)
+        private async Task GenerateNewOrRefreshToken(User user)
         {
 
-            //Create JWT Token & Refresh Token
+            //Generate a JWT Token
             var (jwtToken, expirationDateInUtc) = _authTokenProcess.GenerateJwtToken(user);
 
+            //Generate a REFRESH JWT TOKEN
             var refreshTokenValue = _authTokenProcess.GenerateRefreshToken();
 
             var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
@@ -48,16 +49,17 @@ namespace JWTAuth.Application.Services
 
             await _userManager.UpdateAsync(user);
 
-            _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
+            //APPEND JWT TOKEN to HTTPONLY local storage
+            _authTokenProcess.AppendTokenInHttpOnlyLocalStorage("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
 
-            _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);
+            _authTokenProcess.AppendTokenInHttpOnlyLocalStorage("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);
         }
 
         public async Task RefreshTokenAsync(string? refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
             {
-               throw new RefreshTokenException("Refresh Token is missing.");
+                throw new RefreshTokenException("Refresh Token is missing.");
             }
 
             var user = await _userRepositories.GetUserByRefreshTokenAsync(refreshToken);
@@ -72,7 +74,7 @@ namespace JWTAuth.Application.Services
                 throw new RefreshTokenException("Refresh Token is expired.");
             }
 
-            await GetNewRefreshToken(user);
+            await GenerateNewOrRefreshToken(user);
         }
 
         public async Task RegisterRequestAsync(RegisterRequest registerRequest)
@@ -84,15 +86,15 @@ namespace JWTAuth.Application.Services
                 throw new UserAlreadyExistsException(email: registerRequest.Email);
             }
 
-            var createUser = User.Create(registerRequest.Email, registerRequest.FirstName, registerRequest.LastName);
+            var userCreated = User.Create(registerRequest.Email, registerRequest.FirstName, registerRequest.LastName);
 
-            createUser.PasswordHash = _userManager.PasswordHasher.HashPassword(createUser, registerRequest.Password);
+            userCreated.PasswordHash = _userManager.PasswordHasher.HashPassword(userCreated, registerRequest.Password);
 
-            var result = await _userManager.CreateAsync(createUser);
+            var identityCreatedResult = await _userManager.CreateAsync(userCreated);
 
-            if (!result.Succeeded)
+            if (!identityCreatedResult.Succeeded)
             {
-                throw new RegisterationFailedException(result.Errors.Select(e => e.Description));
+                throw new RegisterationFailedException(identityCreatedResult.Errors.Select(e => e.Description));
             }
         }
     }

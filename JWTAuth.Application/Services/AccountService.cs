@@ -36,7 +36,7 @@ namespace JWTAuth.Application.Services
         private async Task GenerateNewAndRefreshTokenAsync(User user)
         {
 
-            //Generate a JWT Token
+            //Generate a JWT Token & return a VALUE TUPLE
             var (jwtToken, expirationDateInUtc) = _jwtTokenGeneration.GenerateJwtToken(user);
 
             //Generate a REFRESH JWT TOKEN

@@ -40,6 +40,8 @@ namespace JWTAuth.Infrastructure.Processors
                     new Claim(ClaimTypes.NameIdentifier, user.ToString())   //user.Tostring() fetches User Model FullName toString()
                 };
 
+
+            //use 1 minute to TEST the expired Token; recommended time 15 min
             var expiresAt = DateTime.UtcNow.AddMinutes(1);
 
             //Generating the JWT Token based of these Criterias

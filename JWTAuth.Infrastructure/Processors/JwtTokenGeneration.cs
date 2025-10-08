@@ -77,10 +77,11 @@ namespace JWTAuth.Infrastructure.Processors
                 token,
                 new CookieOptions
                 {
+                    //true if a cookie must not be accessible by client-side script; otherwise, false
                     HttpOnly = true,  //specified that JWT stores in Browser' Cookie Storage as HttpOnly
                     Expires = expiration,
-                    IsEssential = true, //specified that a COOKIE is Essential/must have
-                    Secure = true,  //specified that the JWT be transmit over on HTTPS ONLY
+                    IsEssential = true, //specified that a COOKIE is Essential/must have to function properly
+                    Secure = true,  //true to transmit the cookie only over an SSL connection (HTTPS)
                     SameSite = SameSiteMode.Strict //prevents the COOKIE transmits in cross sites requests
                 });
         }

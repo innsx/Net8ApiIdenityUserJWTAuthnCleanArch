@@ -7,6 +7,7 @@ using JWTAuth.Infrastructure.Options;
 using JWTAuth.Infrastructure.Processors;
 using JWTAuth.Infrastructure.Respositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -108,8 +109,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-//Register Authorization as a SERVICE
-builder.Services.AddAuthorization();
+//Register Authorization as a SERVICE & IMPLEMENT A GLOBAL AUTHORIZATION FOR ALL ENDPOINTS
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(JwtBearerDefaults.AuthenticationScheme, 
+                      new AuthorizationPolicyBuilder()
+                            .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                            .RequireAuthenticatedUser()
+                            .Build()
+    );
+});
 
 builder.Services.AddControllers();
 

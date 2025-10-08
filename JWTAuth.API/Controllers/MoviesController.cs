@@ -17,7 +17,8 @@ namespace JWTAuth.API.Controllers
             _movieRepository = movieRepository;
         }
 
-        [Authorize]
+        //DISABLED Authorize attribute because we implemented a GLOBAL Authorization in program.cs
+        //[Authorize]
         [HttpGet("GetMovies")]
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
@@ -25,7 +26,9 @@ namespace JWTAuth.API.Controllers
             return Ok(movies);
         }
 
-        [Authorize]
+
+        //DISABLED Authorize attribute because we implemented a GLOBAL Authorization in program.cs
+        //[Authorize]
         [HttpGet("GetMovie/{id}")]
         public async Task<ActionResult<Movie>> GetMovieById(int id)
         {
@@ -39,7 +42,9 @@ namespace JWTAuth.API.Controllers
             return Ok(movie);
         }
 
-        [Authorize]
+
+        //DISABLED Authorize attribute because we implemented a GLOBAL Authorization in program.cs
+        //[Authorize]
         [HttpPut("Update/{id}")]
         public async Task<ActionResult<Movie>> UpdateMovie(Movie movie)
         {
@@ -53,7 +58,9 @@ namespace JWTAuth.API.Controllers
             return BadRequest();
         }
 
-        [Authorize]
+
+        //DISABLED Authorize attribute because we implemented a GLOBAL Authorization in program.cs
+        //[Authorize]
         [HttpPost("CreateMovie")]
         public async Task<ActionResult<Movie>> CreateMovie(Movie movie)
         {
